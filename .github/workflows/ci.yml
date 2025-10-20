@@ -42,3 +42,5 @@ jobs:
       # Build Java project with Maven
       - name: Build Java project with Maven
         run: mvn clean package -DskipTests
+- name: Run Gitleaks scan
+  uses: zricethezav/gitleaks-action@v2
