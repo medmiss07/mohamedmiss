@@ -42,27 +42,40 @@ jobs:
       # Build Java project with Maven
       - name: Build Java project with Maven
         run: mvn clean package -DskipTests
-- name: Run Gitleaks scan
-  uses: zricethezav/gitleaks-action@v2
 
-  - name: Upload Gitleaks report
-    uses: actions/upload-artifact@v4
-    with:
-      name: gitleaks-report
-      path: results.sarif
+      # Run Gitleaks to check for secrets
+      - name: Run Gitleaks scan
+        uses: zricethezav/gitleaks-action@v2
+        with:
+          args: detect --source . --report-format sarif --report-path results.sarif
 
+      # Upload Gitleaks report as artifact
+      - name: Upload Gitleaks report
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: results.sarif
+
+      # Login to Docker Hub
       - name: Login to Docker Hub
-uses: docker/login-action@v2
-with:
-username: ${{ secrets.DOCKERHUB_USERNAME }}
-password: ${{ secrets.DOCKERHUB_TOKEN }}
-# Build Docker image
-- name: Build Docker image
-run: docker build -t $DOCKER_IMAGE_NAME
-- name: Test Docker image locally
-run: |
-docker run -d --name democyber-test -p 8080:8080 $DOCKER_IMAGE_NAME
-sleep 10
-curl -f htp://localhost:8080 || echo "App not responding"
-docker stop democyber-test
-docker rm democyber-test
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Build Docker image
+      - name: Build Docker image
+        run: docker build -t $DOCKER_IMAGE_NAME .
+
+      # Test Docker image locally
+      - name: Test Docker image locally
+        run: |
+          docker run -d --name democyber-test -p 8080:8080 $DOCKER_IMAGE_NAME
+          sleep 10
+          curl -f http://localhost:8080 || echo "App not responding"
+          docker stop democyber-test
+          docker rm democyber-test
+
+      # Push Docker image to Docker Hub
+      - name: Push Docker image
+        run: docker push $DOCKER_IMAGE_NAME
