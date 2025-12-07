@@ -43,6 +43,18 @@ jobs:
       - name: Build Java project with Maven
         run: mvn clean package -DskipTests
 
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: docker build -t $DOCKER_IMAGE_NAME .
+
+      - name: Push Docker image
+        run: docker push $DOCKER_IMAGE_NAME
+
       # # Run Gitleaks to check for secrets
       # - name: Run Gitleaks scan
       #   uses: zricethezav/gitleaks-action@v2
@@ -89,3 +101,14 @@ jobs:
       #       -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
       #       -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
       #       -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+  static-site:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Upload static site artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gymbrand-site
+          path: web
